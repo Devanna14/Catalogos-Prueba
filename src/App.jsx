@@ -1,6 +1,5 @@
-// src/App.jsx
-
-import { Catalogo } from './Componentes/Catalogo'; // Importa correctamente el componente Catalogo
+import Catalogo from './Componentes/Catalogo';
+ // Importa correctamente el componente Catalogo
 import './App.css';
 
 export const App = () => {
