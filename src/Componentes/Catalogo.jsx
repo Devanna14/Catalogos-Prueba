@@ -20,16 +20,15 @@ const Catalogo = () => {
   const [pageMaquinas, setPageMaquinas] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [statusModule, setStatusModule] = useState(5);
 
   // Estado del Modal
   const [openModal, setOpenModal] = useState(false);
   const [modalData, setModalData] = useState(null);  // o un objeto vacío si ya tienes datos por defecto
 
   // Función para abrir el modal con los detalles del item seleccionado
-  const openDetailsModal = (item, status) => {
-    // Establece un valor por defecto para el status si es null
-    status = status == null ? 0 : status;
-
+  const openDetailsModal = (item, status = 0) => {
+    setStatusModule == status
     // Si 'item' es null, asigna valores vacíos a modalData
     if (item === null) {
       if (selectedComponent === 'Operador') {
@@ -42,11 +41,18 @@ const Catalogo = () => {
           Maq_Descripcion: '',
         });
       } else if (selectedComponent === 'Vista') {
-        // Aquí asumes que quieres llenar el modal con dos selects
-        setModalData({
-          SelectOption1: '', // Asumiendo que el modal tendrá dos selects
-          SelectOption2: '',
-        });
+        if (status === 0) {
+          // Si status es 0, muestra un mensaje de confirmación
+          setModalData({
+            confirmationMessage: '¿Estás seguro de que deseas continuar?', // Ajusta el mensaje según necesites
+          });
+        } else {
+          // Aquí asumes que quieres llenar el modal con dos selects
+          setModalData({
+            SelectOption1: '', // Asumiendo que el modal tendrá dos selects
+            SelectOption2: '',
+          });
+        }
       }
     } else {
       // Si 'item' no es null, asigna los valores del item
@@ -92,9 +98,7 @@ const Catalogo = () => {
   };
 
   const handleEdit = () => {
-    // Aquí puedes hacer la lógica para enviar los datos modificados al backend
     if (selectedComponent === 'Vista') {
-      // Aquí puedes ejecutar el código si selectedComponent es igual a "Vista"
       console.log("El componente seleccionado es Vista");
       axios
         .put('http://localhost/api_catalogos/api_vista.php', modalData)
@@ -104,6 +108,7 @@ const Catalogo = () => {
           console.error('Error al actualizar los datos:', error);
         });
     } else if (selectedComponent === 'Operador') {
+      console.log("El componente seleccionado es Operador");
       axios
         .put('http://localhost/api_catalogos/api_op.php', modalData)
         .then((response) => {
@@ -127,7 +132,6 @@ const Catalogo = () => {
   };
 
   const handleInsert = () => {
-    // Aquí puedes hacer la lógica para enviar los datos modificados al backend
     if (selectedComponent === 'Operador') {
       axios
         .post('http://localhost/api_catalogos/api_op.php', modalData)
@@ -136,7 +140,7 @@ const Catalogo = () => {
         .catch((error) => {
           console.error('Error al agregar los datos:', error);
         });
-    } else if (selectedComponent === 'Maquina') {
+    } else if (selectedComponent === 'Maquinas') {
       axios
         .post('http://localhost/api_catalogos/api_maq.php', modalData)
         .then((response) => {
@@ -145,7 +149,6 @@ const Catalogo = () => {
           console.error('Error al agregar los datos:', error);
         });
     } else {
-      console.log(modalData);
       axios
         .post('http://localhost/api_catalogos/api_vista.php', modalData)
         .then((response) => {
@@ -155,7 +158,6 @@ const Catalogo = () => {
         });
     }
 
-    // Realiza cualquier acción que necesites después de actualizar, como cerrar el modal
     closeModal();
 
   };
@@ -235,7 +237,11 @@ const Catalogo = () => {
                   <TableCell>{item.Clave_Maq}</TableCell>
                   <TableCell>{item.Maq_Descripcion}</TableCell>
                   <TableCell>
-                    <Button onClick={() => openDetailsModal(item, 0)}>X</Button>
+                    {item.Vista_Activo === 1 ? (
+                      <Button onClick={() => openDetailsModal(item)}>✔️</Button>
+                    ) : (
+                      <Button onClick={() => openDetailsModal(item)}>X</Button>
+                    )}
                     <Button onClick={() => openDetailsModal(item, 1)}>Editar</Button>
                   </TableCell>
                 </TableRow>
@@ -266,7 +272,7 @@ const Catalogo = () => {
         margin="normal"
       />
       <div>
-        <Button onClick={() => openDetailsModal(null)}>Agregar</Button>
+        <Button onClick={() => openDetailsModal(null)}>Nuevo Operador</Button>
       </div>
       <TableContainer component={Paper}>
         <Table>
@@ -317,7 +323,7 @@ const Catalogo = () => {
         margin="normal"
       />
       <div>
-        <Button onClick={() => openDetailsModal(null)}>Editar</Button>
+        <Button onClick={() => openDetailsModal(null)}>Nueva Maquina</Button>
       </div>
       <TableContainer component={Paper}>
         <Table>
@@ -356,7 +362,7 @@ const Catalogo = () => {
   );
 
   return (
-    <div>
+    <>
       <h3>¡Hola, este es mi componente Catalogo!</h3>
       <div className="container">
         <Button onClick={() => setSelectedComponent('Vista')}>Vista</Button>
@@ -372,7 +378,6 @@ const Catalogo = () => {
       {/* Modal para mostrar detalles de un item */}
       <Dialog open={openModal} onClose={closeModal}>
         <DialogTitle>Detalles</DialogTitle>
-
         <DialogContent>
           {modalData && (
             <>
@@ -409,20 +414,50 @@ const Catalogo = () => {
                   </FormControl>
                 </>
               )}
+
+              {selectedComponent === 'Operador' && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Nombre del Operador"
+                    value={modalData.Op_Nombre || ''}
+                    onChange={(e) => setModalData({ ...modalData, Op_Nombre: e.target.value })}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Área del Operador"
+                    value={modalData.Op_Area || ''}
+                    onChange={(e) => setModalData({ ...modalData, Op_Area: e.target.value })}
+                    margin="normal"
+                  />
+                </>
+              )}
+
+              {selectedComponent === 'Maquinas' && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Descripción de la Máquina"
+                    value={modalData.Maq_Descripcion || ''}
+                    onChange={(e) => setModalData({ ...modalData, Maq_Descripcion: e.target.value })}
+                    margin="normal"
+                  />
+                </>
+              )}
+
             </>
           )}
         </DialogContent>
-
         <DialogActions>
-          {/* Aseguramos que 'modalData.status' tenga un valor antes de usarlo */}
+          {/* Aseguramos que 'modalData.status' tenga un valor antes de usarlo */}+
           <Button onClick={closeModal} color="error">Desasociar</Button>
           <Button onClick={handleEdit} color="success">Editar</Button>
           <Button onClick={handleInsert} color="success">Insertar</Button>
           <Button onClick={closeModal} color="primary">Cerrar</Button>
         </DialogActions>
-
       </Dialog>
-    </div>
+    </>
   );
 };
 
